@@ -14,6 +14,13 @@ function getLocalNotes(): Note[] {
         content: "This is a simple notepad. You can create, view, and delete notes. Your changes are saved in your browser's local storage.",
         folder: "General",
         createdAt: new Date()
+      },
+      {
+        id: 2,
+        title: "Credentials",
+        content: "Username: admin@orion\nPassword: vault@orion",
+        folder: "General",
+        createdAt: new Date()
       }
     ];
     saveLocalNotes(defaultNotes);
