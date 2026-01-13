@@ -4,8 +4,8 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 
-const HARDCODED_USERNAME = "admin@orion";
-const HARDCODED_PASSWORD = "vault@orion";
+const HARDCODED_USERNAME = "admin";
+const HARDCODED_PASSWORD = "admin";
 
 export async function registerRoutes(
   httpServer: Server,
