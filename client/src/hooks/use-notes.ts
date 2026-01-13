@@ -29,6 +29,31 @@ function getLocalNotes(): Note[] {
   }
   try {
     const parsed = JSON.parse(stored);
+    // Force re-adding default notes if General is empty
+    if (parsed.length === 0 || !parsed.some((n: any) => (n.folder || "General") === "General")) {
+       const defaultNotes: Note[] = [
+        {
+          id: Date.now(),
+          title: "Welcome to your Orion Vault",
+          content: "This is your secure space for notes. You can organize them into collections, search through them, and everything is saved privately on your device.",
+          folder: "General",
+          createdAt: new Date()
+        },
+        {
+          id: Date.now() + 1,
+          title: "Quick Start Guide",
+          content: "1. Create a new collection for specific topics.\n2. Add notes to any collection.\n3. Your credentials (admin@orion / vault@orion) are hardcoded for this vault.",
+          folder: "General",
+          createdAt: new Date()
+        }
+      ];
+      const merged = [...parsed, ...defaultNotes];
+      saveLocalNotes(merged);
+      return merged.map((n: any) => ({
+        ...n,
+        createdAt: n.createdAt ? new Date(n.createdAt) : new Date()
+      }));
+    }
     return parsed.map((n: any) => ({
       ...n,
       createdAt: n.createdAt ? new Date(n.createdAt) : new Date()
