@@ -29,8 +29,27 @@ function getLocalNotes(): Note[] {
   }
   try {
     const parsed = JSON.parse(stored);
+    
+    // Update existing welcome note if it has the old title
+    let updated = false;
+    const notesWithNewTitle = parsed.map((n: any) => {
+      if (n.title === "Welcome to your Orion Vault") {
+        updated = true;
+        return { ...n, title: "Welcome to your secure vault" };
+      }
+      return n;
+    });
+
+    if (updated) {
+      saveLocalNotes(notesWithNewTitle);
+      return notesWithNewTitle.map((n: any) => ({
+        ...n,
+        createdAt: n.createdAt ? new Date(n.createdAt) : new Date()
+      }));
+    }
+
     // Force re-adding default notes if General is empty
-    if (parsed.length === 0 || !parsed.some((n: any) => (n.folder || "General") === "General")) {
+    if (notesWithNewTitle.length === 0 || !notesWithNewTitle.some((n: any) => (n.folder || "General") === "General")) {
        const defaultNotes: Note[] = [
         {
           id: Date.now(),
@@ -47,14 +66,14 @@ function getLocalNotes(): Note[] {
           createdAt: new Date()
         }
       ];
-      const merged = [...parsed, ...defaultNotes];
+      const merged = [...notesWithNewTitle, ...defaultNotes];
       saveLocalNotes(merged);
       return merged.map((n: any) => ({
         ...n,
         createdAt: n.createdAt ? new Date(n.createdAt) : new Date()
       }));
     }
-    return parsed.map((n: any) => ({
+    return notesWithNewTitle.map((n: any) => ({
       ...n,
       createdAt: n.createdAt ? new Date(n.createdAt) : new Date()
     }));
