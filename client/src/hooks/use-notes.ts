@@ -11,15 +11,15 @@ function getLocalNotes(): Note[] {
     const defaultNotes: Note[] = [
       {
         id: 1,
-        title: "Welcome to your Notes",
-        content: "This is a simple notepad. You can create, view, and delete notes. Your changes are saved in your browser's local storage.",
+        title: "Welcome to your Orion Vault",
+        content: "This is your secure space for notes. You can organize them into collections, search through them, and everything is saved privately on your device.",
         folder: "General",
         createdAt: new Date()
       },
       {
         id: 2,
-        title: "Credentials",
-        content: "Username: admin@orion\nPassword: vault@orion",
+        title: "Quick Start Guide",
+        content: "1. Create a new collection for specific topics.\n2. Add notes to any collection.\n3. Your credentials (admin@orion / vault@orion) are hardcoded for this vault.",
         folder: "General",
         createdAt: new Date()
       }
