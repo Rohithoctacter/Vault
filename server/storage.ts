@@ -51,6 +51,7 @@ export class MemStorage implements IStorage {
     const note: Note = { 
       ...insertNote, 
       id, 
+      folder: insertNote.folder || "General",
       createdAt: new Date() 
     };
     this.notes.set(id, note);

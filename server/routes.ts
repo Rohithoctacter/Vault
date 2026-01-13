@@ -4,14 +4,13 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 
-const HARDCODED_USERNAME = "admin";
-const HARDCODED_PASSWORD = "password123";
+const HARDCODED_USERNAME = "admin@orion";
+const HARDCODED_PASSWORD = "vault@orion";
 
 export async function registerRoutes(
   httpServer: Server,
-  app: Express
+  app: Express,
 ): Promise<Server> {
-  
   // Auth Endpoint
   app.post(api.auth.login.path, (req, res) => {
     const { username, password } = req.body;
@@ -39,7 +38,7 @@ export async function registerRoutes(
       if (err instanceof z.ZodError) {
         return res.status(400).json({
           message: err.errors[0].message,
-          field: err.errors[0].path.join('.'),
+          field: err.errors[0].path.join("."),
         });
       }
       throw err;
@@ -59,7 +58,8 @@ export async function registerRoutes(
   if ((await storage.getNotes()).length === 0) {
     await storage.createNote({
       title: "Welcome to your Notes",
-      content: "This is a simple notepad. You can create, view, and delete notes. Your changes are saved in memory.",
+      content:
+        "This is a simple notepad. You can create, view, and delete notes. Your changes are saved in memory.",
     });
     await storage.createNote({
       title: "Credentials",

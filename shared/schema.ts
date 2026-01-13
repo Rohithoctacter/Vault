@@ -6,6 +6,7 @@ export const notes = pgTable("notes", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   content: text("content").notNull(),
+  folder: text("folder").default("General"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -17,3 +18,17 @@ export const insertNoteSchema = createInsertSchema(notes).omit({
 export type Note = typeof notes.$inferSelect;
 export type InsertNote = z.infer<typeof insertNoteSchema>;
 export type CreateNoteRequest = InsertNote;
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+});
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
