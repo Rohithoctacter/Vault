@@ -193,12 +193,15 @@ export function useDeleteFolder() {
   return useMutation({
     mutationFn: async (name: string) => {
       await new Promise(r => setTimeout(r, 300));
+      
+      // 1. Delete all notes in this folder
+      const notes = getLocalNotes();
+      const updatedNotes = notes.filter(n => (n.folder || "General") !== name);
+      saveLocalNotes(updatedNotes);
+
+      // 2. Remove folder from collections
       const folders = getLocalFolders();
       saveLocalFolders(folders.filter(f => f !== name));
-      
-      // Also delete or move notes in this folder? 
-      // Requirement just says delete folder, so we'll remove it from the list.
-      // Notes will still exist but their folder label might need cleanup or they remain in "ghost" folder
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["local-folders"] });
