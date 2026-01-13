@@ -14,7 +14,7 @@ function getLocalNotes(): Note[] {
         title: "Welcome to your secure vault",
         content: "This is your secure space for notes. You can organize them into collections, search through them, and everything is saved privately on your device.",
         folder: "General",
-        attachments: [],
+        attachments: "[]",
         createdAt: new Date()
       },
       {
@@ -22,7 +22,7 @@ function getLocalNotes(): Note[] {
         title: "Quick Start Guide",
         content: "1. Create a new collection for specific topics.\n2. Add notes to any collection.\n3. Your credentials (admin@orion / vault@orion) are hardcoded for this vault.",
         folder: "General",
-        attachments: [],
+        attachments: "[]",
         createdAt: new Date()
       }
     ];
@@ -58,7 +58,7 @@ function getLocalNotes(): Note[] {
           title: "Welcome to your secure vault",
           content: "This is your secure space for notes. You can organize them into collections, search through them, and everything is saved privately on your device.",
           folder: "General",
-          attachments: [],
+          attachments: "[]",
           createdAt: new Date()
         },
         {
@@ -66,7 +66,7 @@ function getLocalNotes(): Note[] {
           title: "Quick Start Guide",
           content: "1. Create a new collection for specific topics.\n2. Add notes to any collection.\n3. Your credentials (admin@orion / vault@orion) are hardcoded for this vault.",
           folder: "General",
-          attachments: [],
+          attachments: "[]",
           createdAt: new Date()
         }
       ];
@@ -167,7 +167,7 @@ export function useCreateNote() {
         ...data,
         id: Math.max(0, ...notes.map(n => n.id)) + 1,
         folder,
-        attachments: data.attachments || [],
+        attachments: JSON.stringify(data.attachments || []),
         createdAt: new Date()
       };
       saveLocalNotes([newNote, ...notes]);
@@ -222,6 +222,59 @@ export function useDeleteNote() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["local-notes"] });
+    },
+  });
+}
+
+// Hook for updating a note's folder (Move)
+export function useUpdateNoteFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, folder }: { id: number; folder: string }) => {
+      await new Promise(r => setTimeout(r, 300));
+      const notes = getLocalNotes();
+      const updated = notes.map(n => n.id === id ? { ...n, folder } : n);
+      saveLocalNotes(updated);
+      
+      // Ensure folder exists
+      const folders = getLocalFolders();
+      if (!folders.includes(folder)) {
+        saveLocalFolders([...folders, folder]);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["local-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["local-folders"] });
+    },
+  });
+}
+
+// Hook for copying a note to a folder
+export function useCopyNoteToFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ note, folder }: { note: Note; folder: string }) => {
+      await new Promise(r => setTimeout(r, 400));
+      const notes = getLocalNotes();
+      const newNote: Note = {
+        ...note,
+        id: Math.max(0, ...notes.map(n => n.id)) + 1,
+        folder,
+        attachments: typeof note.attachments === 'string' ? note.attachments : JSON.stringify(note.attachments || []),
+        createdAt: new Date()
+      };
+      saveLocalNotes([newNote, ...notes]);
+
+      // Ensure folder exists
+      const folders = getLocalFolders();
+      if (!folders.includes(folder)) {
+        saveLocalFolders([...folders, folder]);
+      }
+      return newNote;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["local-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["local-folders"] });
     },
   });
 }

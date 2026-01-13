@@ -1,12 +1,13 @@
 import { format } from "date-fns";
-import { Trash2, Paperclip, FileText, Image as ImageIcon, ExternalLink, Maximize2 } from "lucide-react";
+import { Trash2, Paperclip, FileText, Image as ImageIcon, ExternalLink, Maximize2, MoveRight, Copy, MoreVertical } from "lucide-react";
 import { type Note } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { useDeleteNote } from "@/hooks/use-notes";
+import { useDeleteNote, useUpdateNoteFolder, useCopyNoteToFolder, useFolders } from "@/hooks/use-notes";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface NoteCardProps {
   note: Note;
@@ -15,6 +16,9 @@ interface NoteCardProps {
 
 export function NoteCard({ note, index }: NoteCardProps) {
   const deleteNote = useDeleteNote();
+  const updateFolder = useUpdateNoteFolder();
+  const copyToFolder = useCopyNoteToFolder();
+  const { data: folders = [] } = useFolders();
   const { toast } = useToast();
 
   const attachments = typeof note.attachments === 'string' 
@@ -38,6 +42,38 @@ export function NoteCard({ note, index }: NoteCardProps) {
     }
   };
 
+  const handleMove = async (folder: string) => {
+    try {
+      await updateFolder.mutateAsync({ id: note.id, folder });
+      toast({
+        title: "Moved",
+        description: `Note moved to ${folder}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to move note.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCopy = async (folder: string) => {
+    try {
+      await copyToFolder.mutateAsync({ note, folder });
+      toast({
+        title: "Copied",
+        description: `Note copied to ${folder}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy note.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -49,6 +85,59 @@ export function NoteCard({ note, index }: NoteCardProps) {
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/40 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 opacity-0 group-hover:opacity-100 transition-all focus:opacity-100"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 bg-popover border border-border shadow-md z-50">
+            <DropdownMenuLabel>Note Options</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="gap-2 focus:bg-accent focus:text-accent-foreground cursor-pointer">
+                <MoveRight className="h-4 w-4" />
+                <span>Move to...</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="bg-popover border border-border shadow-md z-[60]">
+                {folders.filter(f => f !== note.folder).map(f => (
+                  <DropdownMenuItem key={f} onClick={() => handleMove(f)} className="focus:bg-accent focus:text-accent-foreground cursor-pointer">
+                    {f}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="gap-2 focus:bg-accent focus:text-accent-foreground cursor-pointer">
+                <Copy className="h-4 w-4" />
+                <span>Copy to...</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="bg-popover border border-border shadow-md z-[60]">
+                {folders.map(f => (
+                  <DropdownMenuItem key={f} onClick={() => handleCopy(f)} className="focus:bg-accent focus:text-accent-foreground cursor-pointer">
+                    {f}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={handleDelete}
+              className="text-destructive focus:text-destructive focus:bg-destructive/10 gap-2 cursor-pointer"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Delete</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <Dialog>
           <DialogTrigger asChild>
             <Button
