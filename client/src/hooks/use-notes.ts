@@ -6,7 +6,19 @@ const STORAGE_KEY = "orion_notes_vault";
 // Helper to get notes from localStorage
 function getLocalNotes(): Note[] {
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return [];
+  if (!stored) {
+    const defaultNotes: Note[] = [
+      {
+        id: 1,
+        title: "Welcome to your Notes",
+        content: "This is a simple notepad. You can create, view, and delete notes. Your changes are saved in your browser's local storage.",
+        folder: "General",
+        createdAt: new Date()
+      }
+    ];
+    saveLocalNotes(defaultNotes);
+    return defaultNotes;
+  }
   try {
     const parsed = JSON.parse(stored);
     return parsed.map((n: any) => ({
