@@ -43,7 +43,7 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentId++;
-    const user: User = { ...insertUser, id: id as any }; // Cast for compatibility with varchar id in previous step if still present
+    const user: User = { ...insertUser, id: id as any };
     this.users.set(id, user as any);
     return user as any;
   }
@@ -63,7 +63,6 @@ export class MemStorage implements IStorage {
 
   async deleteFolder(id: number): Promise<void> {
     this.folders.delete(id);
-    // Cascade delete notes
     for (const [noteId, note] of this.notes.entries()) {
       if (note.folderId === id) {
         this.notes.delete(noteId);
