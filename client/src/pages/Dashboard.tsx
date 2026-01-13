@@ -1,17 +1,28 @@
 import { useState } from "react";
-import { useNotes } from "@/hooks/use-notes";
+import { useNotes, useFolders, useCreateFolder } from "@/hooks/use-notes";
 import { CreateNoteDialog } from "@/components/CreateNoteDialog";
 import { NoteCard } from "@/components/NoteCard";
 import { FolderCard } from "@/components/FolderCard";
 import { useLogout } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, FileText, ChevronLeft, LayoutGrid } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { LogOut, FileText, ChevronLeft, LayoutGrid, FolderPlus, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
-  const { data: notes, isLoading, error } = useNotes();
+  const { data: notes, isLoading: notesLoading, error } = useNotes();
+  const { data: folders = [], isLoading: foldersLoading } = useFolders();
+  const createFolder = useCreateFolder();
   const logout = useLogout();
+  const { toast } = useToast();
+  
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
+
+  const isLoading = notesLoading || foldersLoading;
 
   if (error) {
     if (error.message === "Unauthorized") {
@@ -20,14 +31,27 @@ export default function Dashboard() {
     }
   }
 
-  // Get unique folders and count notes in them
-  const folders = notes?.reduce((acc, note) => {
-    const folderName = note.folder || "General";
-    acc[folderName] = (acc[folderName] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>) || {};
+  const handleCreateFolder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFolderName.trim()) return;
+    
+    try {
+      await createFolder.mutateAsync(newFolderName.trim());
+      toast({
+        title: "Collection created",
+        description: `New folder "${newFolderName}" is ready.`,
+      });
+      setNewFolderName("");
+      setIsFolderDialogOpen(false);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to create collection.",
+        variant: "destructive",
+      });
+    }
+  };
 
-  const folderEntries = Object.entries(folders).sort((a, b) => a[0].localeCompare(b[0]));
   const filteredNotes = selectedFolder 
     ? notes?.filter(n => (n.folder || "General") === selectedFolder)
     : notes;
@@ -81,25 +105,6 @@ export default function Dashboard() {
               <div className="h-12 w-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
               <p className="text-muted-foreground animate-pulse">Loading your vault...</p>
             </motion.div>
-          ) : !notes || notes.length === 0 ? (
-            <motion.div 
-              key="empty"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="flex flex-col items-center justify-center min-h-[60vh] text-center max-w-md mx-auto"
-            >
-              <div className="h-24 w-24 bg-secondary/50 rounded-full flex items-center justify-center mb-6">
-                <LayoutGrid className="h-10 w-10 text-muted-foreground/50" />
-              </div>
-              <h2 className="text-2xl font-display font-bold text-foreground mb-2">
-                Your vault is empty
-              </h2>
-              <p className="text-muted-foreground mb-8">
-                Start capturing your ideas by creating your first note.
-              </p>
-              <CreateNoteDialog />
-            </motion.div>
           ) : !selectedFolder ? (
             <motion.div
               key="folders"
@@ -112,18 +117,55 @@ export default function Dashboard() {
                 <h2 className="text-lg font-display font-bold text-muted-foreground uppercase tracking-widest">
                   Collections
                 </h2>
+                
+                <Dialog open={isFolderDialogOpen} onOpenChange={setIsFolderDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <FolderPlus className="h-4 w-4" />
+                      New Collection
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[400px]">
+                    <DialogHeader>
+                      <DialogTitle>Create New Collection</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleCreateFolder} className="space-y-4 pt-4">
+                      <Input
+                        placeholder="Collection name..."
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        autoFocus
+                      />
+                      <div className="flex justify-end gap-3">
+                        <Button type="button" variant="ghost" onClick={() => setIsFolderDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" disabled={!newFolderName.trim() || createFolder.isPending}>
+                          {createFolder.isPending ? "Creating..." : "Create Collection"}
+                        </Button>
+                      </div>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {folderEntries.map(([name, count], index) => (
-                  <FolderCard 
-                    key={name} 
-                    name={name} 
-                    count={count} 
-                    index={index}
-                    onClick={() => setSelectedFolder(name)}
-                  />
-                ))}
-              </div>
+
+              {folders.length === 0 ? (
+                <div className="text-center py-20 bg-secondary/10 rounded-3xl border-2 border-dashed border-border/50">
+                  <p className="text-muted-foreground">No collections yet. Create one to get started!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {folders.map((name, index) => (
+                    <FolderCard 
+                      key={name} 
+                      name={name} 
+                      count={notes?.filter(n => (n.folder || "General") === name).length || 0} 
+                      index={index}
+                      onClick={() => setSelectedFolder(name)}
+                    />
+                  ))}
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -147,11 +189,23 @@ export default function Dashboard() {
                   {filteredNotes?.length || 0} Notes
                 </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredNotes?.map((note, index) => (
-                  <NoteCard key={note.id} note={note} index={index} />
-                ))}
-              </div>
+              
+              {(!filteredNotes || filteredNotes.length === 0) ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <div className="h-20 w-20 bg-secondary/30 rounded-full flex items-center justify-center mb-4">
+                    <FileText className="h-10 w-10 text-muted-foreground/30" />
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground">No notes in this collection</h3>
+                  <p className="text-muted-foreground mb-6">Start by adding your first note here.</p>
+                  <CreateNoteDialog defaultFolder={selectedFolder} />
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {filteredNotes.map((note, index) => (
+                    <NoteCard key={note.id} note={note} index={index} />
+                  ))}
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

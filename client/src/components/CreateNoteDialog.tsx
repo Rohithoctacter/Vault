@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Loader2, FolderPlus } from "lucide-react";
-import { useCreateNote } from "@/hooks/use-notes";
+import { useCreateNote, useFolders } from "@/hooks/use-notes";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { insertNoteSchema } from "@shared/schema";
@@ -15,6 +15,8 @@ export function CreateNoteDialog({ defaultFolder = "General" }: { defaultFolder?
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [folder, setFolder] = useState(defaultFolder);
+  
+  const { data: folders = [] } = useFolders();
 
   // Sync folder state when defaultFolder changes (e.g. when navigating between folders)
   useEffect(() => {
@@ -92,10 +94,9 @@ export function CreateNoteDialog({ defaultFolder = "General" }: { defaultFolder?
                     <SelectValue placeholder="Select folder" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="General">General</SelectItem>
-                    <SelectItem value="Personal">Personal</SelectItem>
-                    <SelectItem value="Work">Work</SelectItem>
-                    <SelectItem value="Ideas">Ideas</SelectItem>
+                    {folders.map(f => (
+                      <SelectItem key={f} value={f}>{f}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}
