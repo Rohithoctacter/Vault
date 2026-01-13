@@ -163,11 +163,12 @@ export function useCreateNote() {
       const notes = getLocalNotes();
       const folder = data.folder || "General";
       
+      const { attachments, ...rest } = data;
       const newNote: Note = {
-        ...data,
+        ...rest,
         id: Math.max(0, ...notes.map(n => n.id)) + 1,
         folder,
-        attachments: JSON.stringify(data.attachments || []),
+        attachments: JSON.stringify(attachments || []),
         createdAt: new Date()
       };
       saveLocalNotes([newNote, ...notes]);
@@ -226,6 +227,33 @@ export function useDeleteNote() {
   });
 }
 
+// Hook for updating a note
+export function useUpdateNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<CreateNoteRequest> }) => {
+      await new Promise(r => setTimeout(r, 400));
+      const notes = getLocalNotes();
+      const updated = notes.map(n => {
+        if (n.id === id) {
+          const { attachments, ...rest } = data;
+          return {
+            ...n,
+            ...rest,
+            attachments: attachments ? JSON.stringify(attachments) : n.attachments
+          };
+        }
+        return n;
+      });
+      saveLocalNotes(updated);
+      return updated.find(n => n.id === id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["local-notes"] });
+    },
+  });
+}
+
 // Hook for updating a note's folder (Move)
 export function useUpdateNoteFolder() {
   const queryClient = useQueryClient();
@@ -256,11 +284,12 @@ export function useCopyNoteToFolder() {
     mutationFn: async ({ note, folder }: { note: Note; folder: string }) => {
       await new Promise(r => setTimeout(r, 400));
       const notes = getLocalNotes();
+      const { id: _, attachments, ...rest } = note;
       const newNote: Note = {
-        ...note,
+        ...rest,
         id: Math.max(0, ...notes.map(n => n.id)) + 1,
         folder,
-        attachments: typeof note.attachments === 'string' ? note.attachments : JSON.stringify(note.attachments || []),
+        attachments: typeof attachments === 'string' ? attachments : JSON.stringify(attachments || []),
         createdAt: new Date()
       };
       saveLocalNotes([newNote, ...notes]);

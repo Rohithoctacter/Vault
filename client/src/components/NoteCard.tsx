@@ -1,13 +1,16 @@
 import { format } from "date-fns";
-import { Trash2, Paperclip, FileText, Image as ImageIcon, ExternalLink, Maximize2, MoveRight, Copy, MoreVertical } from "lucide-react";
+import { Trash2, Paperclip, FileText, Image as ImageIcon, ExternalLink, Maximize2, MoveRight, Copy, MoreVertical, Pencil, Loader2 } from "lucide-react";
 import { type Note } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { useDeleteNote, useUpdateNoteFolder, useCopyNoteToFolder, useFolders } from "@/hooks/use-notes";
+import { useDeleteNote, useUpdateNoteFolder, useCopyNoteToFolder, useFolders, useUpdateNote } from "@/hooks/use-notes";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface NoteCardProps {
   note: Note;
@@ -18,8 +21,13 @@ export function NoteCard({ note, index }: NoteCardProps) {
   const deleteNote = useDeleteNote();
   const updateFolder = useUpdateNoteFolder();
   const copyToFolder = useCopyNoteToFolder();
+  const updateNote = useUpdateNote();
   const { data: folders = [] } = useFolders();
   const { toast } = useToast();
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editTitle, setEditTitle] = useState(note.title);
+  const [editContent, setEditContent] = useState(note.content);
 
   const attachments = typeof note.attachments === 'string' 
     ? JSON.parse(note.attachments) 
@@ -37,6 +45,27 @@ export function NoteCard({ note, index }: NoteCardProps) {
       toast({
         title: "Error",
         description: "Failed to delete note.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateNote.mutateAsync({
+        id: note.id,
+        data: { title: editTitle, content: editContent }
+      });
+      toast({
+        title: "Updated",
+        description: "Note updated successfully.",
+      });
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update note.",
         variant: "destructive",
       });
     }
@@ -85,6 +114,50 @@ export function NoteCard({ note, index }: NoteCardProps) {
       <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/40 to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px] border-none shadow-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-display text-primary">Edit Note</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdate} className="space-y-6 mt-4">
+              <div className="space-y-4">
+                <Input
+                  placeholder="Note Title"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="text-lg font-medium border-0 border-b-2 border-muted focus-visible:ring-0 focus-visible:border-primary px-0 rounded-none bg-transparent transition-colors"
+                />
+                <Textarea
+                  placeholder="Write your thoughts here..."
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="min-h-[200px] resize-none border-0 bg-secondary/30 focus-visible:ring-0 rounded-xl p-4 text-base leading-relaxed"
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updateNote.isPending || !editTitle.trim() || !editContent.trim()}
+                  className="min-w-[100px]"
+                >
+                  {updateNote.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
         <Dialog>
           <DialogTrigger asChild>
             <Button
@@ -155,6 +228,13 @@ export function NoteCard({ note, index }: NoteCardProps) {
             <DropdownMenuLabel>Note Options</DropdownMenuLabel>
             <DropdownMenuSeparator />
             
+            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} className="gap-2 cursor-pointer">
+              <Pencil className="h-4 w-4" />
+              <span>Edit Note</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="gap-2 focus:bg-accent focus:text-accent-foreground cursor-pointer">
                 <MoveRight className="h-4 w-4" />
