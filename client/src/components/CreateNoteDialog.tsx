@@ -3,16 +3,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Loader2, FolderPlus } from "lucide-react";
 import { useCreateNote } from "@/hooks/use-notes";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { insertNoteSchema } from "@shared/schema";
 
-export function CreateNoteDialog() {
+export function CreateNoteDialog({ defaultFolder = "General" }: { defaultFolder?: string }) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [folder, setFolder] = useState(defaultFolder);
+  const [isAddingNewFolder, setIsAddingNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
   const { toast } = useToast();
   const createNote = useCreateNote();
 
@@ -20,20 +24,22 @@ export function CreateNoteDialog() {
     e.preventDefault();
     
     try {
-      // Client-side pre-validation
-      const data = { title, content };
+      const finalFolder = isAddingNewFolder ? newFolderName : folder;
+      const data = { title, content, folder: finalFolder };
       insertNoteSchema.parse(data);
 
       await createNote.mutateAsync(data);
       
       toast({
         title: "Note created",
-        description: "Your new note has been saved successfully.",
+        description: `Saved to ${finalFolder}`,
       });
       
       setOpen(false);
       setTitle("");
       setContent("");
+      setIsAddingNewFolder(false);
+      setNewFolderName("");
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast({
@@ -64,16 +70,48 @@ export function CreateNoteDialog() {
           <DialogTitle className="text-2xl font-display text-primary">Create a Note</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-          <div className="space-y-2">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              {isAddingNewFolder ? (
+                <Input
+                  placeholder="New folder name..."
+                  value={newFolderName}
+                  onChange={(e) => setNewFolderName(e.target.value)}
+                  className="h-9"
+                  autoFocus
+                />
+              ) : (
+                <Select value={folder} onValueChange={setFolder}>
+                  <SelectTrigger className="h-9 w-full">
+                    <SelectValue placeholder="Select folder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="General">General</SelectItem>
+                    <SelectItem value="Personal">Personal</SelectItem>
+                    <SelectItem value="Work">Work</SelectItem>
+                    <SelectItem value="Ideas">Ideas</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+                onClick={() => setIsAddingNewFolder(!isAddingNewFolder)}
+                title={isAddingNewFolder ? "Select existing folder" : "Create new folder"}
+              >
+                <FolderPlus className="h-4 w-4" />
+              </Button>
+            </div>
+            
             <Input
               placeholder="Note Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="text-lg font-medium border-0 border-b-2 border-muted focus-visible:ring-0 focus-visible:border-primary px-0 rounded-none bg-transparent placeholder:text-muted-foreground/50 transition-colors"
-              autoFocus
             />
-          </div>
-          <div className="space-y-2">
+            
             <Textarea
               placeholder="Write your thoughts here..."
               value={content}
@@ -92,7 +130,7 @@ export function CreateNoteDialog() {
             </Button>
             <Button 
               type="submit" 
-              disabled={createNote.isPending || !title.trim() || !content.trim()}
+              disabled={createNote.isPending || !title.trim() || !content.trim() || (isAddingNewFolder && !newFolderName.trim())}
               className="min-w-[100px]"
             >
               {createNote.isPending ? (
