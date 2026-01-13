@@ -11,7 +11,7 @@ function getLocalNotes(): Note[] {
     const defaultNotes: Note[] = [
       {
         id: 1,
-        title: "Welcome to your Orion Vault",
+        title: "Welcome to your secure vault",
         content: "This is your secure space for notes. You can organize them into collections, search through them, and everything is saved privately on your device.",
         folder: "General",
         createdAt: new Date()
@@ -34,7 +34,7 @@ function getLocalNotes(): Note[] {
        const defaultNotes: Note[] = [
         {
           id: Date.now(),
-          title: "Welcome to your Orion Vault",
+          title: "Welcome to your secure vault",
           content: "This is your secure space for notes. You can organize them into collections, search through them, and everything is saved privately on your device.",
           folder: "General",
           createdAt: new Date()

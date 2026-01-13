@@ -66,7 +66,7 @@ export default function Dashboard() {
               <FileText className="h-5 w-5" />
             </div>
             <h1 className="text-2xl font-display font-bold text-foreground tracking-tight">
-              {selectedFolder || "My Notes"}
+              {selectedFolder || "Vault"}
             </h1>
           </div>
           
