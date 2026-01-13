@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Trash2 } from "lucide-react";
+import { Trash2, Paperclip, FileText, Image as ImageIcon, ExternalLink } from "lucide-react";
 import { type Note } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { useDeleteNote } from "@/hooks/use-notes";
@@ -14,6 +14,10 @@ interface NoteCardProps {
 export function NoteCard({ note, index }: NoteCardProps) {
   const deleteNote = useDeleteNote();
   const { toast } = useToast();
+
+  const attachments = typeof note.attachments === 'string' 
+    ? JSON.parse(note.attachments) 
+    : (note.attachments || []);
 
   const handleDelete = async () => {
     try {
@@ -48,6 +52,28 @@ export function NoteCard({ note, index }: NoteCardProps) {
         <p className="text-muted-foreground text-sm leading-relaxed line-clamp-6 flex-1 whitespace-pre-wrap">
           {note.content}
         </p>
+
+        {attachments.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {attachments.map((file: any, i: number) => (
+              <a
+                key={i}
+                href={file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-secondary/40 hover:bg-secondary/60 px-2.5 py-1 rounded-md border border-border/50 text-xs font-medium transition-colors group/link"
+              >
+                {file.type.startsWith('image/') ? (
+                  <ImageIcon className="h-3 w-3 text-primary" />
+                ) : (
+                  <FileText className="h-3 w-3 text-primary" />
+                )}
+                <span className="truncate max-w-[100px]">{file.name}</span>
+                <ExternalLink className="h-2.5 w-2.5 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+              </a>
+            ))}
+          </div>
+        )}
       </div>
       
       <div className="px-6 py-4 bg-secondary/20 border-t border-border/50 flex items-center justify-between">

@@ -93,7 +93,7 @@ export default function Login() {
 
         <div className="mt-8 text-center">
           <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium">
-            Secure Notes Environment
+            Secure Vault Environment
           </p>
         </div>
       </motion.div>

@@ -163,6 +163,7 @@ export function useCreateNote() {
         ...data,
         id: Math.max(0, ...notes.map(n => n.id)) + 1,
         folder,
+        attachments: data.attachments || [],
         createdAt: new Date()
       };
       saveLocalNotes([newNote, ...notes]);

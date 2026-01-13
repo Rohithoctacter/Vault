@@ -7,6 +7,7 @@ export const notes = pgTable("notes", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   folder: text("folder").default("General"),
+  attachments: text("attachments"), // Store as JSON string for simplicity with local/pg
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -16,7 +17,12 @@ export const insertNoteSchema = createInsertSchema(notes).omit({
 }).extend({
   title: z.string().min(1, "Title is required"),
   content: z.string().min(1, "Content is required"),
-  folder: z.string().optional()
+  folder: z.string().optional(),
+  attachments: z.array(z.object({
+    name: z.string(),
+    url: z.string(),
+    type: z.string()
+  })).optional()
 });
 
 export type Note = typeof notes.$inferSelect;
