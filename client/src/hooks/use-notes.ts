@@ -1,18 +1,36 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type CreateNoteRequest } from "@shared/routes";
-import { z } from "zod";
+import { type Note, type CreateNoteRequest } from "@shared/schema";
+
+const STORAGE_KEY = "orion_notes_vault";
+
+// Helper to get notes from localStorage
+function getLocalNotes(): Note[] {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) return [];
+  try {
+    const parsed = JSON.parse(stored);
+    return parsed.map((n: any) => ({
+      ...n,
+      createdAt: n.createdAt ? new Date(n.createdAt) : new Date()
+    }));
+  } catch (e) {
+    return [];
+  }
+}
+
+// Helper to save notes to localStorage
+function saveLocalNotes(notes: Note[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
 
 // Hook for fetching all notes
 export function useNotes() {
   return useQuery({
-    queryKey: [api.notes.list.path],
+    queryKey: ["local-notes"],
     queryFn: async () => {
-      const res = await fetch(api.notes.list.path, { credentials: "include" });
-      if (!res.ok) {
-        if (res.status === 401) throw new Error("Unauthorized");
-        throw new Error("Failed to fetch notes");
-      }
-      return api.notes.list.responses[200].parse(await res.json());
+      // Simulate slight delay for "awesome" feel
+      await new Promise(r => setTimeout(r, 300));
+      return getLocalNotes();
     },
   });
 }
@@ -22,28 +40,19 @@ export function useCreateNote() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: CreateNoteRequest) => {
-      // Validate data before sending
-      const validated = api.notes.create.input.parse(data);
-      
-      const res = await fetch(api.notes.create.path, {
-        method: api.notes.create.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validated),
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        if (res.status === 400) {
-          const error = api.notes.create.responses[400].parse(await res.json());
-          throw new Error(error.message);
-        }
-        throw new Error("Failed to create note");
-      }
-
-      return api.notes.create.responses[201].parse(await res.json());
+      await new Promise(r => setTimeout(r, 400));
+      const notes = getLocalNotes();
+      const newNote: Note = {
+        ...data,
+        id: Math.max(0, ...notes.map(n => n.id)) + 1,
+        folder: data.folder || "General",
+        createdAt: new Date()
+      };
+      saveLocalNotes([newNote, ...notes]);
+      return newNote;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.notes.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["local-notes"] });
     },
   });
 }
@@ -53,18 +62,13 @@ export function useDeleteNote() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: number) => {
-      const url = buildUrl(api.notes.delete.path, { id });
-      const res = await fetch(url, { 
-        method: api.notes.delete.method,
-        credentials: "include" 
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to delete note");
-      }
+      await new Promise(r => setTimeout(r, 300));
+      const notes = getLocalNotes();
+      const filtered = notes.filter(n => n.id !== id);
+      saveLocalNotes(filtered);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.notes.list.path] });
+      queryClient.invalidateQueries({ queryKey: ["local-notes"] });
     },
   });
 }
