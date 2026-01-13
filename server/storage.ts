@@ -52,6 +52,7 @@ export class MemStorage implements IStorage {
       ...insertNote, 
       id, 
       folder: insertNote.folder || "General",
+      attachments: JSON.stringify(insertNote.attachments || []),
       createdAt: new Date() 
     };
     this.notes.set(id, note);

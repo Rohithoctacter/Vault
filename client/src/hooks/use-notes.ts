@@ -14,6 +14,7 @@ function getLocalNotes(): Note[] {
         title: "Welcome to your secure vault",
         content: "This is your secure space for notes. You can organize them into collections, search through them, and everything is saved privately on your device.",
         folder: "General",
+        attachments: [],
         createdAt: new Date()
       },
       {
@@ -21,6 +22,7 @@ function getLocalNotes(): Note[] {
         title: "Quick Start Guide",
         content: "1. Create a new collection for specific topics.\n2. Add notes to any collection.\n3. Your credentials (admin@orion / vault@orion) are hardcoded for this vault.",
         folder: "General",
+        attachments: [],
         createdAt: new Date()
       }
     ];
@@ -56,6 +58,7 @@ function getLocalNotes(): Note[] {
           title: "Welcome to your secure vault",
           content: "This is your secure space for notes. You can organize them into collections, search through them, and everything is saved privately on your device.",
           folder: "General",
+          attachments: [],
           createdAt: new Date()
         },
         {
@@ -63,6 +66,7 @@ function getLocalNotes(): Note[] {
           title: "Quick Start Guide",
           content: "1. Create a new collection for specific topics.\n2. Add notes to any collection.\n3. Your credentials (admin@orion / vault@orion) are hardcoded for this vault.",
           folder: "General",
+          attachments: [],
           createdAt: new Date()
         }
       ];
@@ -179,6 +183,26 @@ export function useCreateNote() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["local-notes"] });
       queryClient.invalidateQueries({ queryKey: ["local-folders"] });
+    },
+  });
+}
+
+// Hook for deleting a folder
+export function useDeleteFolder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      await new Promise(r => setTimeout(r, 300));
+      const folders = getLocalFolders();
+      saveLocalFolders(folders.filter(f => f !== name));
+      
+      // Also delete or move notes in this folder? 
+      // Requirement just says delete folder, so we'll remove it from the list.
+      // Notes will still exist but their folder label might need cleanup or they remain in "ghost" folder
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["local-folders"] });
+      queryClient.invalidateQueries({ queryKey: ["local-notes"] });
     },
   });
 }

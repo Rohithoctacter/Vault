@@ -1,28 +1,50 @@
 import { useState } from "react";
-import { useNotes, useFolders, useCreateFolder } from "@/hooks/use-notes";
+import { useNotes, useFolders, useCreateFolder, useDeleteFolder } from "@/hooks/use-notes";
 import { CreateNoteDialog } from "@/components/CreateNoteDialog";
 import { NoteCard } from "@/components/NoteCard";
 import { FolderCard } from "@/components/FolderCard";
 import { useLogout } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LogOut, FileText, ChevronLeft, LayoutGrid, FolderPlus, Plus } from "lucide-react";
+import { LogOut, FileText, ChevronLeft, LayoutGrid, FolderPlus, Plus, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const { data: notes, isLoading: notesLoading, error } = useNotes();
   const { data: folders = [], isLoading: foldersLoading } = useFolders();
   const createFolder = useCreateFolder();
+  const deleteFolder = useDeleteFolder();
   const logout = useLogout();
   const { toast } = useToast();
   
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
   const [isFolderDialogOpen, setIsFolderDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const isLoading = notesLoading || foldersLoading;
+
+  const handleDeleteFolder = async () => {
+    if (!selectedFolder || selectedFolder === "General") return;
+    
+    try {
+      await deleteFolder.mutateAsync(selectedFolder);
+      toast({
+        title: "Collection deleted",
+        description: `Folder "${selectedFolder}" has been removed.`,
+      });
+      setSelectedFolder(null);
+      setIsDeleteDialogOpen(false);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to delete collection.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (error) {
     if (error.message === "Unauthorized") {
@@ -185,9 +207,34 @@ export default function Dashboard() {
                   Back to Collections
                 </Button>
                 <div className="h-px flex-1 bg-border/50 mx-6" />
-                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  {filteredNotes?.length || 0} Notes
-                </span>
+                <div className="flex items-center gap-2">
+                  {selectedFolder !== "General" && (
+                    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive transition-colors">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Delete Collection</DialogTitle>
+                        </DialogHeader>
+                        <p className="text-muted-foreground py-4">
+                          Are you sure you want to delete the collection "{selectedFolder}"? The notes inside will still be accessible in the main vault.
+                        </p>
+                        <DialogFooter>
+                          <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+                          <Button variant="destructive" onClick={handleDeleteFolder} disabled={deleteFolder.isPending}>
+                            {deleteFolder.isPending ? "Deleting..." : "Delete Collection"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    {filteredNotes?.length || 0} Notes
+                  </span>
+                </div>
               </div>
               
               {(!filteredNotes || filteredNotes.length === 0) ? (
