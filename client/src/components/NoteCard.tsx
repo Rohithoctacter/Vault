@@ -95,7 +95,7 @@ export function NoteCard({ note, index }: NoteCardProps) {
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-popover border border-border shadow-md z-50">
+          <DropdownMenuContent align="end" className="w-48 bg-white border border-border shadow-md z-50">
             <DropdownMenuLabel>Note Options</DropdownMenuLabel>
             <DropdownMenuSeparator />
             
@@ -104,7 +104,7 @@ export function NoteCard({ note, index }: NoteCardProps) {
                 <MoveRight className="h-4 w-4" />
                 <span>Move to...</span>
               </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="bg-popover border border-border shadow-md z-[60]">
+              <DropdownMenuSubContent className="bg-white border border-border shadow-md z-[60]">
                 {folders.filter(f => f !== note.folder).map(f => (
                   <DropdownMenuItem key={f} onClick={() => handleMove(f)} className="focus:bg-accent focus:text-accent-foreground cursor-pointer">
                     {f}
@@ -118,7 +118,7 @@ export function NoteCard({ note, index }: NoteCardProps) {
                 <Copy className="h-4 w-4" />
                 <span>Copy to...</span>
               </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="bg-popover border border-border shadow-md z-[60]">
+              <DropdownMenuSubContent className="bg-white border border-border shadow-md z-[60]">
                 {folders.map(f => (
                   <DropdownMenuItem key={f} onClick={() => handleCopy(f)} className="focus:bg-accent focus:text-accent-foreground cursor-pointer">
                     {f}
