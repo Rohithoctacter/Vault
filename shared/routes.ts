@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertNoteSchema, insertFolderSchema, notes, folders } from './schema';
+import { insertNoteSchema, notes } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -29,38 +29,10 @@ export const api = {
       },
     },
   },
-  folders: {
-    list: {
-      method: 'GET' as const,
-      path: '/api/folders',
-      responses: {
-        200: z.array(z.custom<typeof folders.$inferSelect>()),
-      },
-    },
-    create: {
-      method: 'POST' as const,
-      path: '/api/folders',
-      input: insertFolderSchema,
-      responses: {
-        201: z.custom<typeof folders.$inferSelect>(),
-        400: errorSchemas.validation,
-      },
-    },
-    delete: {
-      method: 'DELETE' as const,
-      path: '/api/folders/:id',
-      responses: {
-        204: z.void(),
-      },
-    },
-  },
   notes: {
     list: {
       method: 'GET' as const,
       path: '/api/notes',
-      input: z.object({
-        folderId: z.coerce.number().optional(),
-      }).optional(),
       responses: {
         200: z.array(z.custom<typeof notes.$inferSelect>()),
       },
