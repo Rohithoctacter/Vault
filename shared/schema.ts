@@ -13,6 +13,10 @@ export const notes = pgTable("notes", {
 export const insertNoteSchema = createInsertSchema(notes).omit({ 
   id: true, 
   createdAt: true 
+}).extend({
+  title: z.string().min(1, "Title is required"),
+  content: z.string().min(1, "Content is required"),
+  folder: z.string().optional()
 });
 
 export type Note = typeof notes.$inferSelect;
