@@ -220,7 +220,7 @@ export default function Dashboard() {
                           <DialogTitle>Delete Collection</DialogTitle>
                         </DialogHeader>
                         <p className="text-muted-foreground py-4">
-                          Are you sure you want to delete the collection "{selectedFolder}"? The notes inside will still be accessible in the main vault.
+                          Are you sure you want to delete the collection "{selectedFolder}"? All notes inside will be permanently deleted.
                         </p>
                         <DialogFooter>
                           <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
